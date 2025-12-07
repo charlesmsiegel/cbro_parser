@@ -2,7 +2,6 @@
 
 import logging
 import re
-import time
 from urllib.parse import urljoin
 
 import requests
@@ -10,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from ..config import Config
 from ..models import ParsedIssue
+from .utils import CrawlDelayManager, extract_reading_order_name
 
 logger = logging.getLogger(__name__)
 
@@ -64,14 +64,7 @@ class CBROScraper:
                 "respects robots.txt crawl-delay)"
             }
         )
-        self._last_request_time = 0.0
-
-    def _respect_crawl_delay(self) -> None:
-        """Ensure we respect the 5-second crawl-delay from robots.txt."""
-        elapsed = time.time() - self._last_request_time
-        if elapsed < self.config.cbro_crawl_delay_seconds:
-            time.sleep(self.config.cbro_crawl_delay_seconds - elapsed)
-        self._last_request_time = time.time()
+        self._crawl_delay = CrawlDelayManager(config.cbro_crawl_delay_seconds)
 
     def fetch_reading_order(self, url: str) -> list[ParsedIssue]:
         """
@@ -86,7 +79,7 @@ class CBROScraper:
         if not url.startswith("http"):
             url = urljoin(self.config.cbro_base_url, url)
 
-        self._respect_crawl_delay()
+        self._crawl_delay.wait()
 
         response = self.session.get(url, timeout=30)
         response.raise_for_status()
@@ -321,13 +314,4 @@ class CBROScraper:
         Returns:
             Human-readable name.
         """
-        # Extract the slug from the URL
-        path = url.rstrip("/").split("/")[-1]
-
-        # Remove common suffixes
-        path = re.sub(r"-reading-order$", "", path, flags=re.IGNORECASE)
-
-        # Convert slug to title
-        name = path.replace("-", " ").title()
-
-        return name
+        return extract_reading_order_name(url)

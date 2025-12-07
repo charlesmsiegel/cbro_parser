@@ -36,14 +36,14 @@ A comprehensive list of issues, pain points, and areas for improvement identifie
 
 ### Code Duplication
 
-- [ ] **Crawl Delay Logic Duplicated** - Identical implementation in:
+- [x] **Crawl Delay Logic Duplicated** - Identical implementation in:
   - `scraper/cbro_scraper.py:69-74`
   - `scraper/index_scraper.py:128-133`
-  - Extract to shared utility
+  - Extract to shared utility - **FIXED: Created `CrawlDelayManager` in `scraper/utils.py`**
 
-- [ ] **Reading Order Name Extraction Duplicated** - Same logic in:
+- [x] **Reading Order Name Extraction Duplicated** - Same logic in:
   - `scraper/cbro_scraper.py:314-333`
-  - `scraper/index_scraper.py:287-298`
+  - `scraper/index_scraper.py:287-298` - **FIXED: Created `extract_reading_order_name()` in `scraper/utils.py`**
 
 ---
 

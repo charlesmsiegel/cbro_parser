@@ -2,7 +2,6 @@
 
 import json
 import logging
-import re
 import time
 from pathlib import Path
 from urllib.parse import urljoin
@@ -12,6 +11,7 @@ from bs4 import BeautifulSoup
 
 from ..config import Config
 from ..models import ReadingOrderEntry
+from .utils import CrawlDelayManager, extract_reading_order_name
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class IndexScraper:
                 "respects robots.txt crawl-delay)"
             }
         )
-        self._last_request_time = 0.0
+        self._crawl_delay = CrawlDelayManager(config.cbro_crawl_delay_seconds)
         self._cache_path = config.cache_db_path.parent / self.CACHE_FILE
 
     def load_cached_orders(self) -> list[ReadingOrderEntry] | None:
@@ -124,13 +124,6 @@ class IndexScraper:
             logger.info(f"Saved {len(entries)} reading orders to cache")
         except Exception as e:
             logger.warning(f"Failed to save reading order cache: {e}")
-
-    def _respect_crawl_delay(self) -> None:
-        """Ensure we respect the 5-second crawl-delay from robots.txt."""
-        elapsed = time.time() - self._last_request_time
-        if elapsed < self.config.cbro_crawl_delay_seconds:
-            time.sleep(self.config.cbro_crawl_delay_seconds - elapsed)
-        self._last_request_time = time.time()
 
     def fetch_all_reading_orders(
         self, progress_callback: callable = None
@@ -198,7 +191,7 @@ class IndexScraper:
         Returns:
             List of ReadingOrderEntry objects from this page.
         """
-        self._respect_crawl_delay()
+        self._crawl_delay.wait()
 
         response = self.session.get(url, timeout=30)
         response.raise_for_status()
@@ -286,16 +279,7 @@ class IndexScraper:
 
     def _extract_name_from_url(self, url: str) -> str:
         """Extract a readable name from a URL path."""
-        # Get the last path segment
-        path = url.rstrip("/").split("/")[-1]
-
-        # Remove common suffixes
-        path = re.sub(r"-reading-order$", "", path, flags=re.IGNORECASE)
-
-        # Convert slug to title case
-        name = path.replace("-", " ").title()
-
-        return name
+        return extract_reading_order_name(url)
 
 
 def get_default_index_scraper() -> IndexScraper:
