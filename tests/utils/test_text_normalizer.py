@@ -39,7 +39,9 @@ class TestNormalizeSeriesName:
     def test_replace_punctuation(self):
         """Test replacement of colons, dashes, underscores."""
         # Note: "The" is only removed from the START, not after punctuation
-        assert normalize_series_name("Batman: The Dark Knight") == "batman the dark knight"
+        assert (
+            normalize_series_name("Batman: The Dark Knight") == "batman the dark knight"
+        )
         assert normalize_series_name("Spider-Man") == "spider man"
         assert normalize_series_name("X_Men") == "x men"
 
@@ -65,8 +67,14 @@ class TestNormalizeSeriesName:
 
     def test_complex_names(self):
         """Test complex series names."""
-        assert normalize_series_name("The Amazing Spider-Man Vol. 2 (1999)") == "amazing spider man"
-        assert normalize_series_name("Green Lantern: Rebirth Vol. 1") == "green lantern rebirth"
+        assert (
+            normalize_series_name("The Amazing Spider-Man Vol. 2 (1999)")
+            == "amazing spider man"
+        )
+        assert (
+            normalize_series_name("Green Lantern: Rebirth Vol. 1")
+            == "green lantern rebirth"
+        )
 
 
 class TestNormalizeIssueNumber:

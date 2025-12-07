@@ -1,16 +1,12 @@
 """Tests for cbro_parser.comicvine.matcher module."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from cbro_parser.comicvine.matcher import SeriesMatcher
+import pytest
+
 from cbro_parser.cache.sqlite_cache import SQLiteCache
-from cbro_parser.models import (
-    ComicVineIssue,
-    ComicVineVolume,
-    MatchedBook,
-    ParsedIssue,
-)
+from cbro_parser.comicvine.matcher import SeriesMatcher
+from cbro_parser.models import ComicVineIssue, ComicVineVolume, MatchedBook, ParsedIssue
 
 
 class TestSeriesMatcherInit:
@@ -113,7 +109,9 @@ class TestSeriesMatcherSelectBestVolume:
             ),
         ]
 
-        best = matcher._select_best_volume(volumes, "amazing spider man", target_year=None)
+        best = matcher._select_best_volume(
+            volumes, "amazing spider man", target_year=None
+        )
 
         assert best is not None
         assert best.cv_volume_id == 1
@@ -296,7 +294,9 @@ class TestSeriesMatcherFindIssue:
         assert issue2 is not None
         assert cv_client.get_volume_issues.call_count == 1
 
-    def test_returns_none_for_missing_issue(self, temp_db, sample_volume, sample_issues):
+    def test_returns_none_for_missing_issue(
+        self, temp_db, sample_volume, sample_issues
+    ):
         """Test None returned for missing issue."""
         cache = SQLiteCache(temp_db)
         cv_client = MagicMock()

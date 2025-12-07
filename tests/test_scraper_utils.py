@@ -6,6 +6,7 @@ Regression tests for: Code Duplication bugs
 """
 
 import time
+
 import pytest
 
 from cbro_parser.scraper.utils import CrawlDelayManager, extract_reading_order_name
@@ -74,7 +75,9 @@ class TestExtractReadingOrderName:
 
     def test_extracts_name_from_full_url(self):
         """Test extracting name from a full URL."""
-        url = "https://www.comicbookreadingorders.com/dc/characters/batman-reading-order/"
+        url = (
+            "https://www.comicbookreadingorders.com/dc/characters/batman-reading-order/"
+        )
         name = extract_reading_order_name(url)
         assert name == "Batman"
 

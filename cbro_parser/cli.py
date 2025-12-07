@@ -71,9 +71,7 @@ Examples:
     batch_parser = subparsers.add_parser(
         "batch", help="Process multiple URLs from file"
     )
-    batch_parser.add_argument(
-        "url_file", help="File containing URLs (one per line)"
-    )
+    batch_parser.add_argument("url_file", help="File containing URLs (one per line)")
     batch_parser.add_argument(
         "--output-dir", default="output", help="Output directory for .cbl files"
     )
@@ -88,9 +86,7 @@ Examples:
     prepop_parser = subparsers.add_parser(
         "prepopulate", help="Prepopulate cache from existing .cbl files"
     )
-    prepop_parser.add_argument(
-        "directory", help="Directory containing .cbl files"
-    )
+    prepop_parser.add_argument("directory", help="Directory containing .cbl files")
 
     # Stats command
     subparsers.add_parser("stats", help="Show cache statistics")
@@ -221,6 +217,7 @@ def cmd_parse(cache: SQLiteCache, config: Config, args) -> None:
 
     # Match issues - keep all in original order
     from .models import MatchedBook
+
     all_books = []
     unmatched = []
     matched_count = 0
@@ -254,6 +251,7 @@ def cmd_parse(cache: SQLiteCache, config: Config, args) -> None:
         print("\nUnmatched issues:")
         # Group by series for cleaner output
         from collections import defaultdict
+
         by_series = defaultdict(list)
         for p in unmatched:
             by_series[p.series_name].append(p.issue_number)
@@ -262,7 +260,9 @@ def cmd_parse(cache: SQLiteCache, config: Config, args) -> None:
             if len(issues) <= 5:
                 print(f"  - {series}: #{', #'.join(issues)}")
             else:
-                print(f"  - {series}: #{', #'.join(issues[:3])}... ({len(issues)} issues)")
+                print(
+                    f"  - {series}: #{', #'.join(issues[:3])}... ({len(issues)} issues)"
+                )
 
     if args.dry_run:
         print("\n[DRY RUN] Would create reading list with above entries")

@@ -172,7 +172,7 @@ def sample_reading_order_entry():
 @pytest.fixture
 def sample_cbl_content():
     """Sample CBL file content for testing."""
-    return '''<?xml version="1.0"?>
+    return """<?xml version="1.0"?>
 <ReadingList xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>Test Reading List</Name>
   <Books>
@@ -184,13 +184,13 @@ def sample_cbl_content():
     </Book>
   </Books>
   <Matchers/>
-</ReadingList>'''
+</ReadingList>"""
 
 
 @pytest.fixture
 def sample_cbro_html():
     """Sample CBRO reading order page HTML."""
-    return '''
+    return """
 <!DOCTYPE html>
 <html>
 <head><title>Green Lantern Reading Order</title></head>
@@ -209,13 +209,13 @@ def sample_cbro_html():
 </article>
 </body>
 </html>
-'''
+"""
 
 
 @pytest.fixture
 def sample_index_html():
     """Sample CBRO index page HTML."""
-    return '''
+    return """
 <!DOCTYPE html>
 <html>
 <head><title>DC Characters</title></head>
@@ -232,4 +232,4 @@ def sample_index_html():
 </article>
 </body>
 </html>
-'''
+"""

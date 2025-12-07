@@ -40,14 +40,10 @@ class CBROScraper:
 
     # Pattern to detect TPB section titles: "Title (YYYY)" without a #
     # These mark the start of trade paperback breakdowns which we should skip
-    TPB_TITLE_PATTERN = re.compile(
-        r"^[A-Za-z][\w\s:'\-]+\s*\(\d{4}\)$"
-    )
+    TPB_TITLE_PATTERN = re.compile(r"^[A-Za-z][\w\s:'\-]+\s*\(\d{4}\)$")
 
     # Pattern to detect issue ranges like "#0-8" or "#43-52" (TPB contents)
-    ISSUE_RANGE_PATTERN = re.compile(
-        r"#\d+\s*[-–—]\s*\d+"
-    )
+    ISSUE_RANGE_PATTERN = re.compile(r"#\d+\s*[-–—]\s*\d+")
 
     def __init__(self, config: Config):
         """
@@ -107,9 +103,7 @@ class CBROScraper:
         }
 
         # Primary content is typically in article or main content div
-        content = soup.find("article") or soup.find(
-            "div", class_="entry-content"
-        )
+        content = soup.find("article") or soup.find("div", class_="entry-content")
         if not content:
             content = soup
             logger.debug("No article/entry-content found, using full page")
@@ -218,8 +212,13 @@ class CBROScraper:
 
         # Skip lines that look like headers, navigation, or metadata
         skip_prefixes = (
-            "Read", "Click", "See", "Check", "Note:",
-            "Powers:", "Created by",
+            "Read",
+            "Click",
+            "See",
+            "Check",
+            "Note:",
+            "Powers:",
+            "Created by",
         )
         if line.startswith(skip_prefixes):
             if stats:

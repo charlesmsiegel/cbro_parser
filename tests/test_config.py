@@ -1,9 +1,10 @@
 """Tests for cbro_parser.config module."""
 
 import os
-import pytest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from cbro_parser.config import Config, get_config, reset_config
 
@@ -169,8 +170,7 @@ class TestConfigThreadSafety:
                 errors.append(e)
 
         threads = [
-            threading.Thread(target=get_config_thread)
-            for _ in range(num_threads)
+            threading.Thread(target=get_config_thread) for _ in range(num_threads)
         ]
 
         for t in threads:
@@ -206,6 +206,7 @@ class TestConfigThreadSafety:
             instantiation_count += 1
             # Small delay to increase chance of race condition
             import time
+
             time.sleep(0.01)
             return original_init(self, env_path)
 
@@ -218,10 +219,9 @@ class TestConfigThreadSafety:
             config = get_config(temp_env_file)
             results.append(config)
 
-        with patch.object(Config, '__init__', counting_init):
+        with patch.object(Config, "__init__", counting_init):
             threads = [
-                threading.Thread(target=get_config_thread)
-                for _ in range(num_threads)
+                threading.Thread(target=get_config_thread) for _ in range(num_threads)
             ]
 
             for t in threads:
@@ -263,8 +263,7 @@ class TestConfigThreadSafety:
                     errors.append(e)
 
         threads = [
-            threading.Thread(target=getter_thread)
-            for _ in range(num_getter_threads)
+            threading.Thread(target=getter_thread) for _ in range(num_getter_threads)
         ]
         threads.append(threading.Thread(target=resetter_thread))
 

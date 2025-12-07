@@ -147,9 +147,7 @@ class ProgressDialog:
         """
         self.progress_var.set(self.total_items)
         self.current_label.config(text=message)
-        self.progress_text.config(
-            text=f"{self.total_items} / {self.total_items}"
-        )
+        self.progress_text.config(text=f"{self.total_items} / {self.total_items}")
 
         # Enable close button, disable cancel
         self.cancel_btn.config(state=tk.DISABLED)

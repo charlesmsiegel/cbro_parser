@@ -143,9 +143,7 @@ class SQLiteCache:
             )
 
     # Issue methods
-    def get_issue(
-        self, cv_volume_id: int, issue_number: str
-    ) -> ComicVineIssue | None:
+    def get_issue(self, cv_volume_id: int, issue_number: str) -> ComicVineIssue | None:
         """Get a cached issue by volume and number."""
         with self._get_connection() as conn:
             row = conn.execute(
@@ -326,9 +324,7 @@ class SQLiteCache:
         with self._get_connection() as conn:
             volumes = conn.execute("SELECT COUNT(*) FROM volumes").fetchone()[0]
             issues = conn.execute("SELECT COUNT(*) FROM issues").fetchone()[0]
-            mappings = conn.execute(
-                "SELECT COUNT(*) FROM series_mapping"
-            ).fetchone()[0]
+            mappings = conn.execute("SELECT COUNT(*) FROM series_mapping").fetchone()[0]
 
             return {
                 "volumes": volumes,
@@ -338,22 +334,16 @@ class SQLiteCache:
 
     def clear_expired(self) -> int:
         """Remove expired entries from cache. Returns count of removed entries."""
-        cutoff = (
-            datetime.now() - timedelta(days=self.expiry_days)
-        ).isoformat()
+        cutoff = (datetime.now() - timedelta(days=self.expiry_days)).isoformat()
         removed = 0
 
         with self._get_connection() as conn:
             # Remove expired volumes
-            cursor = conn.execute(
-                "DELETE FROM volumes WHERE cached_at < ?", (cutoff,)
-            )
+            cursor = conn.execute("DELETE FROM volumes WHERE cached_at < ?", (cutoff,))
             removed += cursor.rowcount
 
             # Remove expired issues
-            cursor = conn.execute(
-                "DELETE FROM issues WHERE cached_at < ?", (cutoff,)
-            )
+            cursor = conn.execute("DELETE FROM issues WHERE cached_at < ?", (cutoff,))
             removed += cursor.rowcount
 
             # Remove expired mappings

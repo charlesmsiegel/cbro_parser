@@ -1,9 +1,10 @@
 """Tests for cbro_parser.comicvine.api_client module."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from cbro_parser.comicvine.api_client import ComicVineClient, ComicVineAPIError
+import pytest
+
+from cbro_parser.comicvine.api_client import ComicVineAPIError, ComicVineClient
 from cbro_parser.comicvine.rate_limiter import RateLimiter
 from cbro_parser.models import ComicVineIssue, ComicVineVolume
 
@@ -70,7 +71,9 @@ class TestComicVineClientSearchVolumes:
         assert "GL" in volumes[0].aliases
 
     @patch("cbro_parser.comicvine.api_client.requests.Session")
-    def test_search_volumes_handles_missing_fields(self, mock_session_class, mock_config):
+    def test_search_volumes_handles_missing_fields(
+        self, mock_session_class, mock_config
+    ):
         """Test search handles missing optional fields."""
         mock_session = MagicMock()
         mock_response = MagicMock()
@@ -201,7 +204,9 @@ class TestComicVineClientGetVolumeIssues:
         assert issues[1].issue_number == "2"
 
     @patch("cbro_parser.comicvine.api_client.requests.Session")
-    def test_get_volume_issues_handles_pagination(self, mock_session_class, mock_config):
+    def test_get_volume_issues_handles_pagination(
+        self, mock_session_class, mock_config
+    ):
         """Test pagination handling."""
         mock_session = MagicMock()
 
@@ -237,7 +242,54 @@ class TestComicVineClientGetVolumeIssues:
         assert len(issues) == 3
 
     @patch("cbro_parser.comicvine.api_client.requests.Session")
-    def test_get_volume_issues_handles_missing_fields(self, mock_session_class, mock_config):
+    def test_get_volume_issues_handles_many_pages(
+        self, mock_session_class, mock_config
+    ):
+        """Test that pagination works iteratively for many pages.
+
+        Regression test for: Recursive Pagination Risk
+        - api_client.py:206 used recursive calls for pagination
+        - Could stack overflow for series with 10,000+ issues
+        - Should use iterative approach instead
+        """
+        mock_session = MagicMock()
+
+        # Simulate 5 pages of results (500 total issues)
+        responses = []
+        for page in range(5):
+            response = MagicMock()
+            response.json.return_value = {
+                "status_code": 1,
+                "number_of_total_results": 500,
+                "results": [
+                    {
+                        "id": page * 100 + i,
+                        "issue_number": str(page * 100 + i + 1),
+                        "cover_date": "",
+                        "name": None,
+                    }
+                    for i in range(100)
+                ],
+            }
+            responses.append(response)
+
+        mock_session.get.side_effect = responses
+        mock_session_class.return_value = mock_session
+
+        client = ComicVineClient(mock_config)
+        client.session = mock_session
+
+        issues = client.get_volume_issues(12345)
+
+        # Should have all 500 issues
+        assert len(issues) == 500
+        # Should have made 5 requests
+        assert mock_session.get.call_count == 5
+
+    @patch("cbro_parser.comicvine.api_client.requests.Session")
+    def test_get_volume_issues_handles_missing_fields(
+        self, mock_session_class, mock_config
+    ):
         """Test handling of missing optional fields."""
         mock_session = MagicMock()
         mock_response = MagicMock()

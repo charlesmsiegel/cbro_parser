@@ -7,6 +7,7 @@ Regression tests for: Daemon Threads Without Cleanup bug
 
 import threading
 import time
+
 import pytest
 
 from cbro_parser.gui.thread_manager import ThreadManager
@@ -177,10 +178,7 @@ class TestThreadManager:
             received_args.extend([arg1, arg2, kwarg1])
 
         manager.start_thread(
-            "with_args",
-            task_with_args,
-            args=("hello", 42),
-            kwargs={"kwarg1": "world"}
+            "with_args", task_with_args, args=("hello", 42), kwargs={"kwarg1": "world"}
         )
 
         time.sleep(0.1)

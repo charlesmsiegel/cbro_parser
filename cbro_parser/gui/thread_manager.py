@@ -72,8 +72,7 @@ class ThreadManager:
         """Remove completed threads from tracking."""
         with self._lock:
             completed = [
-                name for name, thread in self._threads.items()
-                if not thread.is_alive()
+                name for name, thread in self._threads.items() if not thread.is_alive()
             ]
             for name in completed:
                 del self._threads[name]

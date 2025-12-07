@@ -60,7 +60,7 @@ A comprehensive list of issues, pain points, and areas for improvement identifie
 
 ### Performance
 
-- [ ] **Recursive Pagination Risk** - `api_client.py:206` uses recursive calls for pagination with no depth limit. Could stack overflow for series with 10,000+ issues
+- [x] **Recursive Pagination Risk** - `api_client.py:206` uses recursive calls for pagination with no depth limit. Could stack overflow for series with 10,000+ issues - **FIXED: Converted to iterative loop**
 - [ ] **Regex Not Precompiled** - `scraper/cbro_scraper.py:22-50` patterns recompiled on every use. Should be module-level compiled constants
 - [ ] **Cache Full Table Scans** - `cache/sqlite_cache.py:339-373` `clear_expired()` runs full table scans
 - [ ] **GUI Event Queue Buildup** - `gui/app.py:447-545` could queue thousands of update events via `root.after(0, ...)`

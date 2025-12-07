@@ -16,9 +16,7 @@ class ComicVineAPIError(Exception):
 class ComicVineClient:
     """Client for ComicVine API."""
 
-    def __init__(
-        self, config: Config, rate_limiter: RateLimiter | None = None
-    ):
+    def __init__(self, config: Config, rate_limiter: RateLimiter | None = None):
         """
         Initialize the ComicVine client.
 
@@ -60,9 +58,7 @@ class ComicVineClient:
 
         return data
 
-    def search_volumes(
-        self, query: str, limit: int = 10
-    ) -> list[ComicVineVolume]:
+    def search_volumes(self, query: str, limit: int = 10) -> list[ComicVineVolume]:
         """
         Search for volumes (series) by name.
 
@@ -92,9 +88,7 @@ class ComicVineClient:
             aliases = []
             if result.get("aliases"):
                 aliases = [
-                    a.strip()
-                    for a in result["aliases"].split("\n")
-                    if a.strip()
+                    a.strip() for a in result["aliases"].split("\n") if a.strip()
                 ]
 
             # Handle start_year which can be int, str, or None
@@ -131,9 +125,7 @@ class ComicVineClient:
         """
         data = self._make_request(
             f"volume/4050-{volume_id}",
-            {
-                "field_list": "id,name,start_year,publisher,count_of_issues,aliases"
-            },
+            {"field_list": "id,name,start_year,publisher,count_of_issues,aliases"},
         )
 
         result = data["results"]
@@ -143,9 +135,7 @@ class ComicVineClient:
 
         aliases = []
         if result.get("aliases"):
-            aliases = [
-                a.strip() for a in result["aliases"].split("\n") if a.strip()
-            ]
+            aliases = [a.strip() for a in result["aliases"].split("\n") if a.strip()]
 
         # Handle start_year which can be int, str, or None
         start_year = result.get("start_year")
@@ -164,48 +154,51 @@ class ComicVineClient:
             aliases=aliases,
         )
 
-    def get_volume_issues(
-        self, volume_id: int, offset: int = 0
-    ) -> list[ComicVineIssue]:
+    def get_volume_issues(self, volume_id: int) -> list[ComicVineIssue]:
         """
         Get all issues for a volume.
 
         Args:
             volume_id: The ComicVine volume ID.
-            offset: Pagination offset.
 
         Returns:
             List of issues in the volume.
         """
-        data = self._make_request(
-            "issues",
-            {
-                "filter": f"volume:{volume_id}",
-                "field_list": "id,volume,issue_number,cover_date,name",
-                "sort": "issue_number:asc",
-                "offset": offset,
-                "limit": 100,
-            },
-        )
+        all_issues: list[ComicVineIssue] = []
+        offset = 0
+        page_size = 100
 
-        issues = []
-        for result in data.get("results", []):
-            issues.append(
-                ComicVineIssue(
-                    cv_issue_id=result["id"],
-                    cv_volume_id=volume_id,
-                    issue_number=result.get("issue_number") or "",
-                    cover_date=result.get("cover_date") or "",
-                    name=result.get("name"),
-                )
+        while True:
+            data = self._make_request(
+                "issues",
+                {
+                    "filter": f"volume:{volume_id}",
+                    "field_list": "id,volume,issue_number,cover_date,name",
+                    "sort": "issue_number:asc",
+                    "offset": offset,
+                    "limit": page_size,
+                },
             )
 
-        # Handle pagination if needed
-        total_results = data.get("number_of_total_results", 0)
-        if offset + len(issues) < total_results:
-            issues.extend(self.get_volume_issues(volume_id, offset + 100))
+            results = data.get("results", [])
+            for result in results:
+                all_issues.append(
+                    ComicVineIssue(
+                        cv_issue_id=result["id"],
+                        cv_volume_id=volume_id,
+                        issue_number=result.get("issue_number") or "",
+                        cover_date=result.get("cover_date") or "",
+                        name=result.get("name"),
+                    )
+                )
 
-        return issues
+            # Check if we've fetched all results
+            total_results = data.get("number_of_total_results", 0)
+            offset += len(results)
+            if offset >= total_results or not results:
+                break
+
+        return all_issues
 
     def search_issue(
         self, series_name: str, issue_number: str, year: int | None = None

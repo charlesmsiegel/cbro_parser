@@ -1,7 +1,8 @@
 """Tests for cbro_parser.comicvine.rate_limiter module."""
 
-import time
 import threading
+import time
+
 import pytest
 
 from cbro_parser.comicvine.rate_limiter import RateLimiter

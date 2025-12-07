@@ -143,9 +143,7 @@ class IndexScraper:
 
         for i, (url, publisher, category) in enumerate(INDEX_PAGES):
             if progress_callback:
-                progress_callback(
-                    i, total_pages, f"Fetching {publisher} {category}..."
-                )
+                progress_callback(i, total_pages, f"Fetching {publisher} {category}...")
 
             try:
                 # Master reading order pages ARE the reading orders themselves,
@@ -218,9 +216,7 @@ class IndexScraper:
         seen_urls = set()
 
         # Find the main content area
-        content = soup.find("article") or soup.find(
-            "div", class_="entry-content"
-        )
+        content = soup.find("article") or soup.find("div", class_="entry-content")
         if not content:
             content = soup
 
@@ -270,8 +266,7 @@ class IndexScraper:
 
         # Skip admin and non-page links
         if any(
-            x in href.lower()
-            for x in ["wp-admin", "wp-login", "feed", "comment", "?"]
+            x in href.lower() for x in ["wp-admin", "wp-login", "feed", "comment", "?"]
         ):
             return False
 

@@ -1,8 +1,9 @@
 """Reader for ComicRack .cbl reading list files."""
 
-import defusedxml.ElementTree as ET
 from pathlib import Path
 from typing import Generator
+
+import defusedxml.ElementTree as ET
 
 from ..models import MatchedBook, ReadingList
 
@@ -41,9 +42,7 @@ class CBLReader:
 
         return ReadingList(name=name, books=books)
 
-    def read_all(
-        self, directory: Path
-    ) -> Generator[ReadingList, None, None]:
+    def read_all(self, directory: Path) -> Generator[ReadingList, None, None]:
         """
         Read all .cbl files from a directory recursively.
 
@@ -61,9 +60,7 @@ class CBLReader:
             except Exception as e:
                 print(f"Warning: Error reading {cbl_path}: {e}")
 
-    def extract_series_volume_pairs(
-        self, directory: Path
-    ) -> list[tuple[str, str]]:
+    def extract_series_volume_pairs(self, directory: Path) -> list[tuple[str, str]]:
         """
         Extract unique series/volume pairs from all .cbl files.
 

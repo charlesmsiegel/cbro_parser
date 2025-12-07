@@ -373,14 +373,13 @@ class CBROParserApp:
             # If we have cached data, just show a warning
             if self.reading_orders:
                 self.root.after(
-                    0, lambda: self.status_label.config(
+                    0,
+                    lambda: self.status_label.config(
                         text=f"Using cached data ({len(self.reading_orders)} orders) - refresh failed"
-                    )
+                    ),
                 )
             else:
-                self.root.after(
-                    0, lambda: self._on_loading_error(str(e))
-                )
+                self.root.after(0, lambda: self._on_loading_error(str(e)))
 
     def _loading_progress_callback(
         self, current: int, total: int, message: str
@@ -402,7 +401,9 @@ class CBROParserApp:
     def _on_loading_error(self, error: str) -> None:
         """Called when loading fails."""
         self.status_label.config(text=f"Error: {error}")
-        messagebox.showerror("Loading Error", f"Failed to load reading orders:\n\n{error}")
+        messagebox.showerror(
+            "Loading Error", f"Failed to load reading orders:\n\n{error}"
+        )
 
     def _refresh_orders(self) -> None:
         """Refresh the reading order list."""
@@ -412,7 +413,9 @@ class CBROParserApp:
     def _generate_reading_lists(self) -> None:
         """Generate reading lists for selected items."""
         if not self.selected_items:
-            messagebox.showwarning("No Selection", "Please select at least one reading order.")
+            messagebox.showwarning(
+                "No Selection", "Please select at least one reading order."
+            )
             return
 
         output_dir = Path(self.output_dir_var.get())
@@ -420,7 +423,9 @@ class CBROParserApp:
             try:
                 output_dir.mkdir(parents=True)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create output directory:\n\n{e}")
+                messagebox.showerror(
+                    "Error", f"Failed to create output directory:\n\n{e}"
+                )
                 return
 
         # Get selected orders
@@ -429,7 +434,9 @@ class CBROParserApp:
         ]
 
         # Show progress dialog and start processing
-        progress = ProgressDialog(self.root, "Generating Reading Lists", len(selected_orders))
+        progress = ProgressDialog(
+            self.root, "Generating Reading Lists", len(selected_orders)
+        )
 
         self.thread_manager.start_thread(
             "generate_lists",
@@ -460,9 +467,7 @@ class CBROParserApp:
             # Update progress
             self.root.after(
                 0,
-                lambda o=order, idx=i: progress.update(
-                    idx, f"Processing: {o.name}"
-                ),
+                lambda o=order, idx=i: progress.update(idx, f"Processing: {o.name}"),
             )
 
             try:
@@ -545,7 +550,9 @@ class CBROParserApp:
             except Exception as e:
                 self.root.after(
                     0,
-                    lambda o=order, err=str(e): progress.log(f"Error: {o.name} - {err}"),
+                    lambda o=order, err=str(e): progress.log(
+                        f"Error: {o.name} - {err}"
+                    ),
                 )
                 failed += 1
 

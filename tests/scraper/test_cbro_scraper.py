@@ -1,10 +1,11 @@
 """Tests for cbro_parser.scraper.cbro_scraper module."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from cbro_parser.scraper.cbro_scraper import CBROScraper
+import pytest
+
 from cbro_parser.models import ParsedIssue
+from cbro_parser.scraper.cbro_scraper import CBROScraper
 
 
 class TestCBROScraperInit:

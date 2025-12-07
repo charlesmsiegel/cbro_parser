@@ -1,7 +1,8 @@
 """Tests for cbro_parser.cbl.reader and writer modules."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from cbro_parser.cbl.reader import CBLReader, read_reading_list
 from cbro_parser.cbl.writer import CBLWriter, write_reading_list
@@ -167,11 +168,11 @@ class TestCBLReader:
 
     def test_read_empty_books(self, temp_dir):
         """Test reading file with no books."""
-        content = '''<?xml version="1.0"?>
+        content = """<?xml version="1.0"?>
 <ReadingList>
   <Name>Empty</Name>
   <Books></Books>
-</ReadingList>'''
+</ReadingList>"""
         cbl_path = temp_dir / "empty.cbl"
         cbl_path.write_text(content)
 
@@ -183,10 +184,10 @@ class TestCBLReader:
 
     def test_read_uses_filename_as_fallback_name(self, temp_dir):
         """Test that filename is used when Name element missing."""
-        content = '''<?xml version="1.0"?>
+        content = """<?xml version="1.0"?>
 <ReadingList>
   <Books></Books>
-</ReadingList>'''
+</ReadingList>"""
         cbl_path = temp_dir / "my_list.cbl"
         cbl_path.write_text(content)
 
@@ -199,9 +200,9 @@ class TestCBLReader:
         """Test reading all CBL files from directory."""
         # Create multiple CBL files
         (temp_dir / "list1.cbl").write_text(sample_cbl_content)
-        (temp_dir / "list2.cbl").write_text(sample_cbl_content.replace(
-            "Test Reading List", "Second List"
-        ))
+        (temp_dir / "list2.cbl").write_text(
+            sample_cbl_content.replace("Test Reading List", "Second List")
+        )
 
         reader = CBLReader()
         reading_lists = list(reader.read_all(temp_dir))
@@ -323,7 +324,7 @@ class TestCBLReaderExtractSeriesVolumePairs:
 
     def test_extract_series_volume_pairs_skips_incomplete(self, temp_dir):
         """Test that incomplete entries are skipped."""
-        content = '''<?xml version="1.0"?>
+        content = """<?xml version="1.0"?>
 <ReadingList>
   <Name>Test</Name>
   <Books>
@@ -334,7 +335,7 @@ class TestCBLReaderExtractSeriesVolumePairs:
       <Id>test-id-2</Id>
     </Book>
   </Books>
-</ReadingList>'''
+</ReadingList>"""
         cbl_path = temp_dir / "incomplete.cbl"
         cbl_path.write_text(content)
 

@@ -1,12 +1,13 @@
 """Tests for cbro_parser.scraper.index_scraper module."""
 
 import json
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from cbro_parser.scraper.index_scraper import IndexScraper, INDEX_PAGES
+import pytest
+
 from cbro_parser.models import ReadingOrderEntry
+from cbro_parser.scraper.index_scraper import INDEX_PAGES, IndexScraper
 
 
 class TestIndexScraperInit:
@@ -23,7 +24,9 @@ class TestIndexScraperInit:
 class TestIndexScraperCache:
     """Tests for cache loading and saving."""
 
-    def test_save_and_load_cache(self, mock_config, temp_dir, sample_reading_order_entry):
+    def test_save_and_load_cache(
+        self, mock_config, temp_dir, sample_reading_order_entry
+    ):
         """Test saving and loading from cache."""
         mock_config.cache_db_path = temp_dir / "cache.db"
         scraper = IndexScraper(mock_config)
@@ -69,7 +72,9 @@ class TestIndexScraperLinkDetection:
         scraper = IndexScraper(mock_config)
 
         assert scraper._is_reading_order_link("/dc/characters/batman-reading-order/")
-        assert scraper._is_reading_order_link("https://example.com/spider-man-reading-order/")
+        assert scraper._is_reading_order_link(
+            "https://example.com/spider-man-reading-order/"
+        )
 
     def test_reject_non_reading_order(self, mock_config):
         """Test rejection of non-reading-order links."""
@@ -113,7 +118,9 @@ class TestIndexScraperNameExtraction:
         """Test extraction with multiple words."""
         scraper = IndexScraper(mock_config)
 
-        name = scraper._extract_name_from_url("/dc/characters/green-lantern-reading-order/")
+        name = scraper._extract_name_from_url(
+            "/dc/characters/green-lantern-reading-order/"
+        )
 
         assert name == "Green Lantern"
 
@@ -269,7 +276,9 @@ class TestIndexScraperFetchAll:
         entries = scraper.fetch_all_reading_orders()
 
         # DC characters should be sorted
-        dc_chars = [e for e in entries if e.publisher == "DC" and e.category == "characters"]
+        dc_chars = [
+            e for e in entries if e.publisher == "DC" and e.category == "characters"
+        ]
         if len(dc_chars) >= 2:
             names = [e.name for e in dc_chars]
             # "Alpha" should come before "Zebra"

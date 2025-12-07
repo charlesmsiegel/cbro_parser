@@ -1,12 +1,13 @@
 """Tests for cbro_parser.cli module."""
 
-import pytest
 import sys
 from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from cbro_parser.cli import main, cmd_stats, cmd_prepopulate, cmd_parse, cmd_batch
+import pytest
+
+from cbro_parser.cli import cmd_batch, cmd_parse, cmd_prepopulate, cmd_stats, main
 
 
 class TestCLIStats:
@@ -204,7 +205,7 @@ class TestCLIBatch:
         - Behavior should be consistent
         """
         from cbro_parser.cache.sqlite_cache import SQLiteCache
-        from cbro_parser.models import ParsedIssue, MatchedBook
+        from cbro_parser.models import MatchedBook, ParsedIssue
 
         # Create URL file
         url_file = temp_dir / "urls.txt"
@@ -285,7 +286,9 @@ class TestCLIBatch:
         # Verify order is preserved
         assert reading_list.books[0].series == "Batman"
         assert reading_list.books[0].number == "1"
-        assert reading_list.books[1].series == "Obscure Series"  # Unmatched but preserved
+        assert (
+            reading_list.books[1].series == "Obscure Series"
+        )  # Unmatched but preserved
         assert reading_list.books[1].number == "5"
         assert reading_list.books[1].confidence == 0.0  # Marked as unmatched
         assert reading_list.books[2].series == "Batman"
@@ -313,7 +316,9 @@ class TestCLIBatch:
 
         # Create URL file
         url_file = temp_dir / "urls.txt"
-        url_file.write_text("https://example.com/batman/\nhttps://example.com/superman/")
+        url_file.write_text(
+            "https://example.com/batman/\nhttps://example.com/superman/"
+        )
 
         # Setup mocks
         mock_scraper = MagicMock()
@@ -368,7 +373,9 @@ class TestCLIBatch:
 
         # Create URL file with comments
         url_file = temp_dir / "urls.txt"
-        url_file.write_text("# This is a comment\nhttps://example.com/batman/\n# Another comment")
+        url_file.write_text(
+            "# This is a comment\nhttps://example.com/batman/\n# Another comment"
+        )
 
         mock_scraper = MagicMock()
         mock_scraper.fetch_reading_order.return_value = [sample_parsed_issue]

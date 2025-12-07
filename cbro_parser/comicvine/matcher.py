@@ -51,7 +51,9 @@ class SeriesMatcher:
         """
         # Step 1: Normalize series name
         normalized = normalize_series_name(parsed.series_name)
-        logger.debug(f"Matching: {parsed.series_name} #{parsed.issue_number} -> normalized: '{normalized}'")
+        logger.debug(
+            f"Matching: {parsed.series_name} #{parsed.issue_number} -> normalized: '{normalized}'"
+        )
 
         # Step 2: Try to find volume (from cache first)
         volume = self._find_volume(normalized, parsed)
@@ -59,12 +61,16 @@ class SeriesMatcher:
             logger.debug(f"  No volume match for '{parsed.series_name}'")
             return None
 
-        logger.debug(f"  Volume matched: {volume.name} ({volume.start_year}) [CV:{volume.cv_volume_id}]")
+        logger.debug(
+            f"  Volume matched: {volume.name} ({volume.start_year}) [CV:{volume.cv_volume_id}]"
+        )
 
         # Step 3: Find the specific issue
         issue = self._find_issue(volume, parsed.issue_number)
         if not issue:
-            logger.debug(f"  Issue #{parsed.issue_number} not found in volume {volume.cv_volume_id}")
+            logger.debug(
+                f"  Issue #{parsed.issue_number} not found in volume {volume.cv_volume_id}"
+            )
             return None
 
         logger.debug(f"  Issue matched: #{issue.issue_number} [CV:{issue.cv_issue_id}]")
@@ -115,7 +121,9 @@ class SeriesMatcher:
         if cached_volume_id and cached_volume_id > 0:
             volume = self.cache.get_volume(cached_volume_id)
             if volume:
-                logger.debug(f"  Cache hit for '{normalized_name}' -> {volume.name} ({volume.start_year})")
+                logger.debug(
+                    f"  Cache hit for '{normalized_name}' -> {volume.name} ({volume.start_year})"
+                )
                 return volume
 
         # Search ComicVine
@@ -134,9 +142,7 @@ class SeriesMatcher:
             self.cache.cache_volume(vol)
 
         # Find best match
-        best_match = self._select_best_volume(
-            volumes, normalized_name, target_year
-        )
+        best_match = self._select_best_volume(volumes, normalized_name, target_year)
 
         if best_match:
             # Cache the mapping
@@ -149,9 +155,7 @@ class SeriesMatcher:
 
         # Interactive mode: ask user if uncertain
         if not best_match and self.interactive and volumes:
-            best_match = self._interactive_select_volume(
-                parsed.series_name, volumes
-            )
+            best_match = self._interactive_select_volume(parsed.series_name, volumes)
             if best_match:
                 self.cache.cache_series_mapping(
                     normalized_name,
@@ -178,10 +182,7 @@ class SeriesMatcher:
             # Exact name match
             if vol_normalized == normalized_name:
                 score += 100
-            elif (
-                normalized_name in vol_normalized
-                or vol_normalized in normalized_name
-            ):
+            elif normalized_name in vol_normalized or vol_normalized in normalized_name:
                 score += 50
 
             # Check aliases

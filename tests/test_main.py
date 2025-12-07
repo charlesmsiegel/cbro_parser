@@ -1,8 +1,9 @@
 """Tests for cbro_parser.main module."""
 
 import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestMainModule:
@@ -14,6 +15,7 @@ class TestMainModule:
         monkeypatch.setattr(sys, "argv", ["cbro-parser", "--cli"])
 
         from cbro_parser.main import main
+
         main()
 
         mock_cli.assert_called_once()
@@ -24,6 +26,7 @@ class TestMainModule:
         monkeypatch.setattr(sys, "argv", ["cbro-parser", "parse", "url"])
 
         from cbro_parser.main import main
+
         main()
 
         mock_cli.assert_called_once()
@@ -34,6 +37,7 @@ class TestMainModule:
         monkeypatch.setattr(sys, "argv", ["cbro-parser", "stats"])
 
         from cbro_parser.main import main
+
         main()
 
         mock_cli.assert_called_once()
@@ -44,6 +48,7 @@ class TestMainModule:
         monkeypatch.setattr(sys, "argv", ["cbro-parser", "batch", "file.txt"])
 
         from cbro_parser.main import main
+
         main()
 
         mock_cli.assert_called_once()
@@ -54,6 +59,7 @@ class TestMainModule:
         monkeypatch.setattr(sys, "argv", ["cbro-parser", "prepopulate", "/path"])
 
         from cbro_parser.main import main
+
         main()
 
         mock_cli.assert_called_once()
@@ -64,6 +70,7 @@ class TestMainModule:
         monkeypatch.setattr(sys, "argv", ["cbro-parser", "--help"])
 
         from cbro_parser.main import main
+
         main()
 
         mock_cli.assert_called_once()
@@ -74,6 +81,7 @@ class TestMainModule:
         monkeypatch.setattr(sys, "argv", ["cbro-parser"])
 
         from cbro_parser.main import main
+
         main()
 
         mock_gui.assert_called_once()
