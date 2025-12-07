@@ -27,7 +27,7 @@ A comprehensive list of issues, pain points, and areas for improvement identifie
 
 ### Bug Fixes
 
-- [ ] **Batch Mode Loses Data** - `cli.py:320-324` discards unmatched books in batch mode, but single parse mode preserves them (`cli.py:248-250`). Inconsistent behavior causes data loss
+- [x] **Batch Mode Loses Data** - `cli.py:320-324` discards unmatched books in batch mode, but single parse mode preserves them (`cli.py:248-250`). Inconsistent behavior causes data loss - **FIXED: Batch mode now preserves unmatched issues with `confidence=0.0`**
 
 ### Thread Safety
 

@@ -317,20 +317,38 @@ def cmd_batch(cache: SQLiteCache, config: Config, args) -> None:
         try:
             parsed_issues = scraper.fetch_reading_order(url)
 
-            matched_books = []
+            # Match issues - keep all in original order (same as cmd_parse)
+            from .models import MatchedBook
+
+            all_books = []
+            matched_count = 0
             for parsed in parsed_issues:
                 matched = matcher.match_issue(parsed)
                 if matched:
-                    matched_books.append(matched)
+                    all_books.append(matched)
+                    matched_count += 1
+                else:
+                    # Create unmatched book entry to preserve reading order
+                    unmatched_book = MatchedBook(
+                        series=parsed.series_name,
+                        number=parsed.issue_number,
+                        volume=parsed.volume_hint or parsed.year_hint or "0",
+                        year=parsed.year_hint or "0",
+                        format_type=parsed.format_type,
+                        confidence=0.0,  # Mark as unmatched
+                    )
+                    all_books.append(unmatched_book)
 
             list_name = scraper.get_reading_order_name(url)
-            reading_list = ReadingList(name=list_name, books=matched_books)
+            reading_list = ReadingList(name=list_name, books=all_books)
 
             output_path = output_dir / f"{list_name}.cbl"
             writer.write(reading_list, output_path)
 
+            unmatched_count = len(all_books) - matched_count
             print(
-                f"  -> {len(matched_books)} issues matched, written to {output_path}"
+                f"  -> {matched_count}/{len(all_books)} issues matched, written to {output_path}"
+                + (f" ({unmatched_count} unmatched)" if unmatched_count else "")
             )
 
         except Exception as e:

@@ -185,6 +185,116 @@ class TestCLIBatch:
     @patch("cbro_parser.cli.ComicVineClient")
     @patch("cbro_parser.cli.SeriesMatcher")
     @patch("cbro_parser.cli.CBLWriter")
+    def test_cmd_batch_preserves_unmatched_issues(
+        self,
+        mock_writer_cls,
+        mock_matcher_cls,
+        mock_cv_cls,
+        mock_scraper_cls,
+        temp_db,
+        temp_dir,
+        mock_config,
+        capsys,
+    ):
+        """Test that batch mode preserves unmatched issues like single parse mode.
+
+        Regression test for: Batch Mode Loses Data bug
+        - cli.py:320-324 discards unmatched books in batch mode
+        - cli.py:248-250 preserves them in single parse mode
+        - Behavior should be consistent
+        """
+        from cbro_parser.cache.sqlite_cache import SQLiteCache
+        from cbro_parser.models import ParsedIssue, MatchedBook
+
+        # Create URL file
+        url_file = temp_dir / "urls.txt"
+        url_file.write_text("https://example.com/test-order/")
+
+        # Create 3 parsed issues
+        parsed_issues = [
+            ParsedIssue(
+                series_name="Batman",
+                issue_number="1",
+                volume_hint=None,
+                year_hint="2016",
+                format_type=None,
+                notes=None,
+            ),
+            ParsedIssue(
+                series_name="Obscure Series",  # This one won't match
+                issue_number="5",
+                volume_hint=None,
+                year_hint="2020",
+                format_type=None,
+                notes=None,
+            ),
+            ParsedIssue(
+                series_name="Batman",
+                issue_number="2",
+                volume_hint=None,
+                year_hint="2016",
+                format_type=None,
+                notes=None,
+            ),
+        ]
+
+        # Setup mocks
+        mock_scraper = MagicMock()
+        mock_scraper.fetch_reading_order.return_value = parsed_issues
+        mock_scraper.get_reading_order_name.return_value = "Test Order"
+        mock_scraper_cls.return_value = mock_scraper
+
+        # Matcher returns MatchedBook for Batman, None for Obscure Series
+        def mock_match_issue(parsed):
+            if parsed.series_name == "Batman":
+                return MatchedBook(
+                    series="Batman",
+                    number=parsed.issue_number,
+                    volume="2016",
+                    year="2016",
+                    format_type=None,
+                    cv_volume_id=12345,
+                    cv_issue_id=99999,
+                    confidence=1.0,
+                )
+            return None  # Unmatched
+
+        mock_matcher = MagicMock()
+        mock_matcher.match_issue.side_effect = mock_match_issue
+        mock_matcher_cls.return_value = mock_matcher
+
+        cache = SQLiteCache(temp_db)
+        args = MagicMock()
+        args.url_file = str(url_file)
+        args.output_dir = str(temp_dir / "output")
+        args.interactive = False
+
+        cmd_batch(cache, mock_config, args)
+
+        # Get the ReadingList passed to writer.write()
+        mock_writer_cls.return_value.write.assert_called_once()
+        call_args = mock_writer_cls.return_value.write.call_args
+        reading_list = call_args[0][0]
+
+        # CRITICAL: Batch mode should preserve ALL 3 issues, not just the 2 matched ones
+        assert len(reading_list.books) == 3, (
+            f"Expected 3 books (including unmatched), got {len(reading_list.books)}. "
+            "Batch mode is discarding unmatched issues!"
+        )
+
+        # Verify order is preserved
+        assert reading_list.books[0].series == "Batman"
+        assert reading_list.books[0].number == "1"
+        assert reading_list.books[1].series == "Obscure Series"  # Unmatched but preserved
+        assert reading_list.books[1].number == "5"
+        assert reading_list.books[1].confidence == 0.0  # Marked as unmatched
+        assert reading_list.books[2].series == "Batman"
+        assert reading_list.books[2].number == "2"
+
+    @patch("cbro_parser.cli.CBROScraper")
+    @patch("cbro_parser.cli.ComicVineClient")
+    @patch("cbro_parser.cli.SeriesMatcher")
+    @patch("cbro_parser.cli.CBLWriter")
     def test_cmd_batch_processes_urls(
         self,
         mock_writer_cls,
