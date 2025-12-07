@@ -1,6 +1,7 @@
 """Configuration management for CBRO Parser."""
 
 import os
+import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -55,13 +56,14 @@ class Config:
         self.default_output_dir = path
 
 
-# Global config instance (lazy loaded)
+# Global config instance (lazy loaded) with thread-safe access
 _config: Config | None = None
+_config_lock = threading.Lock()
 
 
 def get_config(env_path: Path | None = None) -> Config:
     """
-    Get the global configuration instance.
+    Get the global configuration instance (thread-safe).
 
     Args:
         env_path: Optional path to .env file for initialization.
@@ -70,12 +72,20 @@ def get_config(env_path: Path | None = None) -> Config:
         Config instance.
     """
     global _config
-    if _config is None:
-        _config = Config(env_path)
-    return _config
+    # Fast path: if already initialized, return without lock
+    if _config is not None:
+        return _config
+
+    # Slow path: acquire lock and initialize if needed
+    with _config_lock:
+        # Double-check after acquiring lock (another thread may have initialized)
+        if _config is None:
+            _config = Config(env_path)
+        return _config
 
 
 def reset_config() -> None:
     """Reset the global configuration (mainly for testing)."""
     global _config
-    _config = None
+    with _config_lock:
+        _config = None

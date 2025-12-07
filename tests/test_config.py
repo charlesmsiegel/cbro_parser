@@ -128,6 +128,155 @@ class TestResetConfig:
         assert config1 is config2
 
 
+class TestConfigThreadSafety:
+    """Tests for thread-safe config access.
+
+    Regression tests for: Global Config Not Thread-Safe bug
+    - config.py:72,80 uses global variable pattern without thread safety
+    - GUI uses multiple threads (app.py:339,418)
+    """
+
+    def setup_method(self):
+        """Reset config before each test."""
+        reset_config()
+
+    def teardown_method(self):
+        """Clean up after each test."""
+        reset_config()
+
+    def test_concurrent_get_config_returns_same_instance(self, temp_env_file):
+        """Test that concurrent get_config calls return the same instance.
+
+        Without thread safety, multiple threads could each create their own
+        Config instance when they all see _config as None simultaneously.
+        """
+        import threading
+        import time
+
+        results = []
+        errors = []
+        num_threads = 10
+        barrier = threading.Barrier(num_threads)
+
+        def get_config_thread():
+            try:
+                # Wait for all threads to be ready
+                barrier.wait()
+                # All threads call get_config at the same time
+                config = get_config(temp_env_file)
+                results.append(config)
+            except Exception as e:
+                errors.append(e)
+
+        threads = [
+            threading.Thread(target=get_config_thread)
+            for _ in range(num_threads)
+        ]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert not errors, f"Errors occurred: {errors}"
+        assert len(results) == num_threads
+
+        # All threads should have gotten the exact same Config instance
+        first_config = results[0]
+        for i, config in enumerate(results[1:], 2):
+            assert config is first_config, (
+                f"Thread {i} got a different Config instance! "
+                "This indicates a race condition in get_config()."
+            )
+
+    def test_concurrent_get_config_only_creates_one_instance(self, temp_env_file):
+        """Test that concurrent access only creates one Config instance.
+
+        This test patches Config.__init__ to count instantiations.
+        Without thread safety, multiple instances could be created.
+        """
+        import threading
+        from unittest.mock import patch
+
+        instantiation_count = 0
+        original_init = Config.__init__
+
+        def counting_init(self, env_path=None):
+            nonlocal instantiation_count
+            instantiation_count += 1
+            # Small delay to increase chance of race condition
+            import time
+            time.sleep(0.01)
+            return original_init(self, env_path)
+
+        num_threads = 10
+        barrier = threading.Barrier(num_threads)
+        results = []
+
+        def get_config_thread():
+            barrier.wait()
+            config = get_config(temp_env_file)
+            results.append(config)
+
+        with patch.object(Config, '__init__', counting_init):
+            threads = [
+                threading.Thread(target=get_config_thread)
+                for _ in range(num_threads)
+            ]
+
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+        # Should only create ONE instance, not multiple
+        assert instantiation_count == 1, (
+            f"Config was instantiated {instantiation_count} times! "
+            "Expected exactly 1. This indicates a race condition."
+        )
+
+    def test_reset_config_thread_safety(self, temp_env_file):
+        """Test that reset_config is thread-safe with concurrent get_config.
+
+        One thread resets while others are getting - should not cause errors.
+        """
+        import threading
+
+        errors = []
+        num_getter_threads = 5
+        num_iterations = 20
+
+        def getter_thread():
+            for _ in range(num_iterations):
+                try:
+                    config = get_config(temp_env_file)
+                    # Access an attribute to ensure config is valid
+                    _ = config.comicvine_api_key
+                except Exception as e:
+                    errors.append(e)
+
+        def resetter_thread():
+            for _ in range(num_iterations):
+                try:
+                    reset_config()
+                except Exception as e:
+                    errors.append(e)
+
+        threads = [
+            threading.Thread(target=getter_thread)
+            for _ in range(num_getter_threads)
+        ]
+        threads.append(threading.Thread(target=resetter_thread))
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Should complete without errors
+        assert not errors, f"Thread safety errors: {errors}"
+
+
 class TestConfigEnvironmentVariable:
     """Tests for Config with environment variables."""
 
