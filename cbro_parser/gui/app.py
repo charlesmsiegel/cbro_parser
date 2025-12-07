@@ -15,6 +15,7 @@ from ..models import MatchedBook, ReadingList, ReadingOrderEntry
 from ..scraper.cbro_scraper import CBROScraper
 from ..scraper.index_scraper import IndexScraper
 from .progress_dialog import ProgressDialog
+from .thread_manager import ThreadManager
 
 
 class CBROParserApp:
@@ -53,6 +54,12 @@ class CBROParserApp:
             window_seconds=self.config.cv_rate_limit_window_seconds,
             min_interval=self.config.cv_safe_delay_seconds,
         )
+
+        # Thread management for proper cleanup
+        self.thread_manager = ThreadManager()
+
+        # Set up window close handler for graceful shutdown
+        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
         # Data
         self.reading_orders: list[ReadingOrderEntry] = []
@@ -335,17 +342,24 @@ class CBROParserApp:
             )
             self._rebuild_list()
 
-        # Start background refresh
-        thread = threading.Thread(target=self._load_orders_thread, daemon=True)
-        thread.start()
+        # Start background refresh with proper thread management
+        self.thread_manager.start_thread("load_orders", self._load_orders_thread)
 
-    def _load_orders_thread(self) -> None:
+    def _load_orders_thread(self, shutdown_event: threading.Event) -> None:
         """Background thread to fetch fresh reading orders."""
         try:
+            # Check for early shutdown
+            if shutdown_event.is_set():
+                return
+
             scraper = IndexScraper(self.config)
             fresh_orders = scraper.fetch_all_reading_orders(
                 progress_callback=self._loading_progress_callback
             )
+
+            # Check for shutdown before updating UI
+            if shutdown_event.is_set():
+                return
 
             # Update with fresh data
             self.reading_orders = fresh_orders
@@ -354,6 +368,8 @@ class CBROParserApp:
             # Update UI on main thread
             self.root.after(0, self._on_orders_loaded)
         except Exception as e:
+            if shutdown_event.is_set():
+                return
             # If we have cached data, just show a warning
             if self.reading_orders:
                 self.root.after(
@@ -415,15 +431,15 @@ class CBROParserApp:
         # Show progress dialog and start processing
         progress = ProgressDialog(self.root, "Generating Reading Lists", len(selected_orders))
 
-        thread = threading.Thread(
-            target=self._generate_thread,
+        self.thread_manager.start_thread(
+            "generate_lists",
+            self._generate_thread,
             args=(selected_orders, output_dir, progress),
-            daemon=True,
         )
-        thread.start()
 
     def _generate_thread(
         self,
+        shutdown_event: threading.Event,
         orders: list[ReadingOrderEntry],
         output_dir: Path,
         progress: ProgressDialog,
@@ -438,7 +454,7 @@ class CBROParserApp:
         failed = 0
 
         for i, order in enumerate(orders):
-            if progress.cancelled:
+            if progress.cancelled or shutdown_event.is_set():
                 break
 
             # Update progress
@@ -543,6 +559,18 @@ class CBROParserApp:
                 f"Completed: {successful} successful, {failed} failed"
             ),
         )
+
+    def _on_closing(self) -> None:
+        """Handle window close with graceful thread shutdown."""
+        # Check if any threads are running
+        active_count = self.thread_manager.active_thread_count()
+        if active_count > 0:
+            # Give threads a chance to finish gracefully
+            self.status_label.config(text="Shutting down background tasks...")
+            self.root.update()
+            self.thread_manager.shutdown(timeout=2.0)
+
+        self.root.destroy()
 
 
 def run_app() -> None:
