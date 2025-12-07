@@ -84,7 +84,7 @@ Values that should be configurable:
 
 ### Type Safety
 
-- [ ] **Weak Callback Types** - `index_scraper.py:136` uses `callable` instead of proper `Callable[[int, int, str], None]`
+- [x] **Weak Callback Types** - `index_scraper.py:136` uses `callable` instead of proper `Callable[[int, int, str], None]` - **FIXED: Added ProgressCallback type alias with proper Callable signature**
 - [ ] **Missing TypedDict** - `cbro_scraper.py:201` uses `dict | None` where TypedDict would be clearer
 - [ ] **No Runtime Validation** - Intermediate parsing steps have no Pydantic validation
 

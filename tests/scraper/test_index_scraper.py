@@ -233,7 +233,7 @@ class TestIndexScraperFetchAll:
 
         progress_calls = []
 
-        def callback(current, total, message):
+        def callback(current: int, total: int, message: str) -> None:
             progress_calls.append((current, total, message))
 
         scraper.fetch_all_reading_orders(progress_callback=callback)
@@ -241,6 +241,26 @@ class TestIndexScraperFetchAll:
         assert len(progress_calls) > 0
         # Should have final "Done" call
         assert progress_calls[-1][2] == "Done"
+
+    @patch.object(IndexScraper, "_fetch_index_page")
+    def test_progress_callback_receives_correct_types(self, mock_fetch, mock_config):
+        """Test that progress callback receives correct argument types."""
+        mock_fetch.return_value = []
+        scraper = IndexScraper(mock_config)
+
+        type_errors = []
+
+        def typed_callback(current: int, total: int, message: str) -> None:
+            if not isinstance(current, int):
+                type_errors.append(f"current is {type(current)}, expected int")
+            if not isinstance(total, int):
+                type_errors.append(f"total is {type(total)}, expected int")
+            if not isinstance(message, str):
+                type_errors.append(f"message is {type(message)}, expected str")
+
+        scraper.fetch_all_reading_orders(progress_callback=typed_callback)
+
+        assert len(type_errors) == 0, f"Type errors found: {type_errors}"
 
     @patch.object(IndexScraper, "_fetch_index_page")
     def test_master_pages_added_directly(self, mock_fetch, mock_config):

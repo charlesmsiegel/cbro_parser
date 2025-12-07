@@ -4,6 +4,7 @@ import json
 import logging
 import time
 from pathlib import Path
+from typing import Callable
 from urllib.parse import urljoin
 
 import requests
@@ -12,6 +13,9 @@ from bs4 import BeautifulSoup
 from ..config import Config
 from ..models import ReadingOrderEntry
 from .utils import CrawlDelayManager, extract_reading_order_name
+
+# Type alias for progress callback function
+ProgressCallback = Callable[[int, int, str], None]
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +133,7 @@ class IndexScraper:
             logger.warning(f"Failed to save reading order cache: {e}")
 
     def fetch_all_reading_orders(
-        self, progress_callback: callable = None
+        self, progress_callback: ProgressCallback | None = None
     ) -> list[ReadingOrderEntry]:
         """
         Fetch all available reading orders from index pages.
