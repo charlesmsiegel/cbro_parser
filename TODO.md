@@ -108,7 +108,7 @@ Values that should be configurable:
 
 ### Dead / Incomplete Code
 
-- [ ] **Unused Function** - `cbl/reader.py:64-85` `extract_series_volume_pairs()` defined but never called
+- [x] **Unused Function** - `cbl/reader.py:64-85` `extract_series_volume_pairs()` defined but never called - **FIXED: Removed dead code**
 - [ ] **Interactive Mode Incomplete** - `matcher.py:263-287` only works in CLI, GUI always passes `interactive=False`
 - [ ] **Dry-Run Incomplete** - `cli.py:267-269` doesn't validate output paths or permissions
 - [ ] **Prepopulate Placeholder** - `cli.py:176` uses `cv_volume_id = -1` placeholder that's never verified

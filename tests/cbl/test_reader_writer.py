@@ -300,52 +300,6 @@ class TestConvenienceFunctions:
         assert output_path.exists()
 
 
-class TestCBLReaderExtractSeriesVolumePairs:
-    """Tests for extract_series_volume_pairs method."""
-
-    def test_extract_series_volume_pairs(self, temp_dir, sample_cbl_content):
-        """Test extracting series/volume pairs from CBL files."""
-        cbl_path = temp_dir / "test.cbl"
-        cbl_path.write_text(sample_cbl_content)
-
-        reader = CBLReader()
-        pairs = reader.extract_series_volume_pairs(temp_dir)
-
-        assert len(pairs) > 0
-        # Should have (series, volume) tuples
-        assert all(isinstance(p, tuple) and len(p) == 2 for p in pairs)
-
-    def test_extract_series_volume_pairs_empty_dir(self, temp_dir):
-        """Test extracting from empty directory."""
-        reader = CBLReader()
-        pairs = reader.extract_series_volume_pairs(temp_dir)
-
-        assert pairs == []
-
-    def test_extract_series_volume_pairs_skips_incomplete(self, temp_dir):
-        """Test that incomplete entries are skipped."""
-        content = """<?xml version="1.0"?>
-<ReadingList>
-  <Name>Test</Name>
-  <Books>
-    <Book Series="Batman" Number="1" Volume="" Year="2016">
-      <Id>test-id</Id>
-    </Book>
-    <Book Series="" Number="1" Volume="2016" Year="2016">
-      <Id>test-id-2</Id>
-    </Book>
-  </Books>
-</ReadingList>"""
-        cbl_path = temp_dir / "incomplete.cbl"
-        cbl_path.write_text(content)
-
-        reader = CBLReader()
-        pairs = reader.extract_series_volume_pairs(temp_dir)
-
-        # Should skip entries without series or volume
-        assert len(pairs) == 0
-
-
 class TestCBLReaderErrorHandling:
     """Tests for specific exception handling in CBLReader."""
 

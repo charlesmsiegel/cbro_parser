@@ -60,27 +60,6 @@ class CBLReader:
             except OSError as e:
                 print(f"Warning: Error reading {cbl_path}: {e}")
 
-    def extract_series_volume_pairs(self, directory: Path) -> list[tuple[str, str]]:
-        """
-        Extract unique series/volume pairs from all .cbl files.
-
-        Useful for cache prepopulation.
-
-        Args:
-            directory: Root directory containing .cbl files.
-
-        Returns:
-            List of (series_name, volume_year) tuples.
-        """
-        pairs = set()
-
-        for reading_list in self.read_all(directory):
-            for book in reading_list.books:
-                if book.series and book.volume:
-                    pairs.add((book.series, book.volume))
-
-        return sorted(pairs)
-
 
 def read_reading_list(file_path: Path) -> ReadingList:
     """
