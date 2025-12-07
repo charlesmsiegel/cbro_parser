@@ -45,6 +45,13 @@ class CBROScraper:
     # Pattern to detect issue ranges like "#0-8" or "#43-52" (TPB contents)
     ISSUE_RANGE_PATTERN = re.compile(r"#\d+\s*[-–—]\s*\d+")
 
+    # Pattern to detect standalone year lines like "(2009)"
+    YEAR_LINE_PATTERN = re.compile(r"^\(\d{4}\)$")
+
+    # Pattern to detect metadata lines like "First Appearance:  Issue #1"
+    # These have a label followed by colon and TWO spaces before the content
+    METADATA_LINE_PATTERN = re.compile(r"^[A-Za-z ]+:  ")
+
     def __init__(self, config: Config):
         """
         Initialize the scraper.
@@ -132,7 +139,7 @@ class CBROScraper:
                 continue
 
             # Skip standalone year lines like "(2009)"
-            if re.match(r"^\(\d{4}\)$", line):
+            if self.YEAR_LINE_PATTERN.match(line):
                 stats["year_lines"] += 1
                 logger.debug(f"Skipped year line: {line}")
                 continue
@@ -238,8 +245,7 @@ class CBROScraper:
         # These have a label followed by colon and TWO spaces before the content
         if ":  " in line:
             # Check if it starts with a metadata label (word followed by :  )
-            # Note: re is already imported at module level
-            if re.match(r"^[A-Za-z ]+:  ", line):
+            if self.METADATA_LINE_PATTERN.match(line):
                 if stats:
                     stats["header_lines"] += 1
                 logger.debug(f"Skipped metadata line: {line}")

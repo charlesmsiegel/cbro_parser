@@ -404,3 +404,37 @@ class TestCBROScraperAdditionalCoverage:
         # Without reading-order suffix
         name = scraper.get_reading_order_name("/dc/events/blackest-night/")
         assert "Blackest Night" in name
+
+
+class TestCBROScraperPatterns:
+    """Tests for precompiled regex patterns."""
+
+    def test_year_line_pattern_exists(self, mock_config):
+        """Test that YEAR_LINE_PATTERN is a precompiled pattern."""
+        import re
+
+        assert hasattr(CBROScraper, "YEAR_LINE_PATTERN")
+        assert isinstance(CBROScraper.YEAR_LINE_PATTERN, re.Pattern)
+
+    def test_year_line_pattern_matches(self, mock_config):
+        """Test YEAR_LINE_PATTERN matches standalone year lines."""
+        pattern = CBROScraper.YEAR_LINE_PATTERN
+        assert pattern.match("(2005)")
+        assert pattern.match("(2023)")
+        assert not pattern.match("Batman #1 (2005)")
+        assert not pattern.match("2005")
+
+    def test_metadata_line_pattern_exists(self, mock_config):
+        """Test that METADATA_LINE_PATTERN is a precompiled pattern."""
+        import re
+
+        assert hasattr(CBROScraper, "METADATA_LINE_PATTERN")
+        assert isinstance(CBROScraper.METADATA_LINE_PATTERN, re.Pattern)
+
+    def test_metadata_line_pattern_matches(self, mock_config):
+        """Test METADATA_LINE_PATTERN matches metadata lines."""
+        pattern = CBROScraper.METADATA_LINE_PATTERN
+        assert pattern.match("First Appearance:  Issue #1")
+        assert pattern.match("Powers:  Something")
+        assert not pattern.match("Batman #1")
+        assert not pattern.match("Note: This is something")
