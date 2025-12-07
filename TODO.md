@@ -52,10 +52,11 @@ A comprehensive list of issues, pain points, and areas for improvement identifie
 ### Error Handling
 
 - [ ] **Inconsistent Error Reporting** - Mix of `print()` (35 instances) and `logging` (28 instances). Standardize on logging throughout
-- [ ] **Bare Exception Handling** - `cli.py:234` catches all exceptions without specific handling. Similar issues in:
+- [x] **Bare Exception Handling** - `cli.py:234` catches all exceptions without specific handling. Similar issues in:
   - `cbl/reader.py:59-62`
   - `scraper/index_scraper.py:105-107`
   - `gui/app.py:356-367`
+  - **FIXED: All bare `except Exception` replaced with specific exception types (`requests.RequestException`, `OSError`, `ValueError`, `json.JSONDecodeError`)**
 - [ ] **Missing Error Context** - Exceptions re-raised without adding context (`cache/sqlite_cache.py:93`)
 
 ### Performance

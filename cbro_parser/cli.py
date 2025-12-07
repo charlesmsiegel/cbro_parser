@@ -5,6 +5,8 @@ import logging
 import sys
 from pathlib import Path
 
+import requests
+
 from .cache.sqlite_cache import SQLiteCache
 from .cbl.reader import CBLReader
 from .cbl.writer import CBLWriter
@@ -209,8 +211,11 @@ def cmd_parse(cache: SQLiteCache, config: Config, args) -> None:
 
     try:
         parsed_issues = scraper.fetch_reading_order(args.url)
-    except Exception as e:
+    except requests.RequestException as e:
         print(f"Error fetching reading order: {e}")
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Error parsing reading order: {e}")
         sys.exit(1)
 
     print(f"Found {len(parsed_issues)} issues")
@@ -351,8 +356,12 @@ def cmd_batch(cache: SQLiteCache, config: Config, args) -> None:
                 + (f" ({unmatched_count} unmatched)" if unmatched_count else "")
             )
 
-        except Exception as e:
-            print(f"  Error: {e}")
+        except requests.RequestException as e:
+            print(f"  Error fetching URL: {e}")
+        except ValueError as e:
+            print(f"  Error parsing content: {e}")
+        except OSError as e:
+            print(f"  Error writing file: {e}")
 
         # Show rate limiter status
         remaining = rate_limiter.remaining_requests()

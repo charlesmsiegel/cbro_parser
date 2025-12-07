@@ -57,7 +57,7 @@ class CBLReader:
                 yield self.read(cbl_path)
             except ET.ParseError as e:
                 print(f"Warning: Failed to parse {cbl_path}: {e}")
-            except Exception as e:
+            except OSError as e:
                 print(f"Warning: Error reading {cbl_path}: {e}")
 
     def extract_series_volume_pairs(self, directory: Path) -> list[tuple[str, str]]:

@@ -102,8 +102,11 @@ class IndexScraper:
             cached_at = data.get("cached_at", "unknown")
             logger.info(f"Loaded {len(entries)} cached reading orders from {cached_at}")
             return entries
-        except Exception as e:
-            logger.warning(f"Failed to load reading order cache: {e}")
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse reading order cache: {e}")
+            return None
+        except OSError as e:
+            logger.warning(f"Failed to read reading order cache: {e}")
             return None
 
     def save_to_cache(self, entries: list[ReadingOrderEntry]) -> None:
@@ -122,7 +125,7 @@ class IndexScraper:
             with open(self._cache_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
             logger.info(f"Saved {len(entries)} reading orders to cache")
-        except Exception as e:
+        except OSError as e:
             logger.warning(f"Failed to save reading order cache: {e}")
 
     def fetch_all_reading_orders(
@@ -161,7 +164,7 @@ class IndexScraper:
                 else:
                     entries = self._fetch_index_page(url, publisher, category)
                     all_entries.extend(entries)
-            except Exception as e:
+            except requests.RequestException as e:
                 print(f"Warning: Failed to fetch {url}: {e}")
 
         if progress_callback:

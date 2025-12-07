@@ -303,3 +303,67 @@ class TestIndexPages:
         publishers = set(p for _, p, _ in INDEX_PAGES)
         assert "Marvel" in publishers
         assert "DC" in publishers
+
+
+class TestIndexScraperErrorHandling:
+    """Tests for specific exception handling in IndexScraper."""
+
+    def test_load_cached_orders_handles_json_error(self, mock_config, temp_dir):
+        """Test load_cached_orders handles JSONDecodeError specifically."""
+        mock_config.cache_db_path = temp_dir / "cache.db"
+
+        scraper = IndexScraper(mock_config)
+
+        # Write malformed JSON to cache location
+        cache_path = temp_dir / "reading_orders_cache.json"
+        cache_path.write_text("{invalid json content}")
+
+        # Should handle gracefully and return None
+        result = scraper.load_cached_orders()
+        assert result is None
+
+    def test_load_cached_orders_handles_file_not_found(self, mock_config, temp_dir):
+        """Test load_cached_orders handles FileNotFoundError."""
+        mock_config.cache_db_path = temp_dir / "nonexistent_cache.db"
+
+        scraper = IndexScraper(mock_config)
+
+        # Should return None when cache doesn't exist
+        result = scraper.load_cached_orders()
+        assert result is None
+
+    def test_save_to_cache_handles_permission_error(self, mock_config, temp_dir):
+        """Test save_to_cache handles OSError/PermissionError."""
+        import os
+
+        from cbro_parser.models import ReadingOrderEntry
+
+        mock_config.cache_db_path = temp_dir / "cache.db"
+        scraper = IndexScraper(mock_config)
+
+        entries = [
+            ReadingOrderEntry(
+                name="Test",
+                url="https://example.com/test",
+                publisher="DC",
+                category="characters",
+            )
+        ]
+
+        # Make cache directory unwritable
+        cache_path = temp_dir / "reading_orders_cache.json"
+        cache_path.write_text("{}")
+
+        try:
+            os.chmod(cache_path, 0o000)
+        except OSError:
+            pytest.skip("Cannot change file permissions on this system")
+
+        try:
+            # Should handle error gracefully without raising
+            scraper.save_to_cache(entries)
+            # If we get here without exception, the error was handled
+        except PermissionError:
+            pytest.fail("save_to_cache should handle PermissionError gracefully")
+        finally:
+            os.chmod(cache_path, 0o644)

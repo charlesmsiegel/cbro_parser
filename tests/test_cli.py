@@ -164,10 +164,14 @@ class TestCLIParse:
         capsys,
     ):
         """Test parse command handles fetch errors."""
+        import requests
+
         from cbro_parser.cache.sqlite_cache import SQLiteCache
 
         mock_scraper = MagicMock()
-        mock_scraper.fetch_reading_order.side_effect = Exception("Network error")
+        mock_scraper.fetch_reading_order.side_effect = requests.RequestException(
+            "Network error"
+        )
         mock_scraper_cls.return_value = mock_scraper
 
         cache = SQLiteCache(temp_db)
@@ -533,3 +537,103 @@ class TestCLIArgumentParsing:
         assert captured_args["url_file"] == str(url_file)
         assert captured_args["output_dir"] == "custom_output"
         assert captured_args["interactive"] is True
+
+
+class TestCLIErrorHandling:
+    """Tests for specific exception handling in CLI commands."""
+
+    @patch("cbro_parser.cli.CBROScraper")
+    @patch("cbro_parser.cli.ComicVineClient")
+    @patch("cbro_parser.cli.SeriesMatcher")
+    @patch("cbro_parser.cli.CBLWriter")
+    def test_cmd_parse_handles_network_error(
+        self,
+        mock_writer_cls,
+        mock_matcher_cls,
+        mock_cv_cls,
+        mock_scraper_cls,
+        temp_db,
+        temp_dir,
+        mock_config,
+        capsys,
+    ):
+        """Test cmd_parse handles network errors specifically."""
+        import requests
+
+        from cbro_parser.cache.sqlite_cache import SQLiteCache
+
+        mock_scraper = MagicMock()
+        mock_scraper.fetch_reading_order.side_effect = requests.RequestException(
+            "Connection failed"
+        )
+        mock_scraper_cls.return_value = mock_scraper
+
+        cache = SQLiteCache(temp_db)
+        args = MagicMock()
+        args.url = "https://example.com/test/"
+        args.output = str(temp_dir / "output.cbl")
+        args.verbose = False
+        args.interactive = False
+        args.dry_run = False
+
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_parse(cache, mock_config, args)
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Error fetching reading order" in captured.out
+
+    @patch("cbro_parser.cli.CBROScraper")
+    @patch("cbro_parser.cli.ComicVineClient")
+    @patch("cbro_parser.cli.SeriesMatcher")
+    @patch("cbro_parser.cli.CBLWriter")
+    def test_cmd_batch_handles_scraper_error_continues(
+        self,
+        mock_writer_cls,
+        mock_matcher_cls,
+        mock_cv_cls,
+        mock_scraper_cls,
+        temp_db,
+        temp_dir,
+        mock_config,
+        sample_parsed_issue,
+        sample_matched_book,
+        capsys,
+    ):
+        """Test batch command continues after individual URL scraping errors."""
+        import requests
+
+        from cbro_parser.cache.sqlite_cache import SQLiteCache
+
+        # Create URL file with 2 URLs
+        url_file = temp_dir / "urls.txt"
+        url_file.write_text("https://example.com/fail/\nhttps://example.com/succeed/")
+
+        # First URL fails, second succeeds
+        mock_scraper = MagicMock()
+        mock_scraper.fetch_reading_order.side_effect = [
+            requests.RequestException("Network error"),
+            [sample_parsed_issue],
+        ]
+        mock_scraper.get_reading_order_name.return_value = "Test"
+        mock_scraper_cls.return_value = mock_scraper
+
+        mock_matcher = MagicMock()
+        mock_matcher.match_issue.return_value = sample_matched_book
+        mock_matcher_cls.return_value = mock_matcher
+
+        cache = SQLiteCache(temp_db)
+        args = MagicMock()
+        args.url_file = str(url_file)
+        args.output_dir = str(temp_dir / "output")
+        args.interactive = False
+
+        # Should not raise - continues after error
+        cmd_batch(cache, mock_config, args)
+
+        # Should have attempted both URLs
+        assert mock_scraper.fetch_reading_order.call_count == 2
+
+        # Error should be logged
+        captured = capsys.readouterr()
+        assert "Error" in captured.out

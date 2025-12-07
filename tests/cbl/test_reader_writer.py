@@ -344,3 +344,61 @@ class TestCBLReaderExtractSeriesVolumePairs:
 
         # Should skip entries without series or volume
         assert len(pairs) == 0
+
+
+class TestCBLReaderErrorHandling:
+    """Tests for specific exception handling in CBLReader."""
+
+    def test_read_all_handles_permission_error(self, temp_dir, capsys):
+        """Test read_all handles permission errors specifically."""
+        import os
+
+        # Create a file we can't read
+        unreadable = temp_dir / "unreadable.cbl"
+        unreadable.write_text(
+            "<?xml version='1.0'?><ReadingList><Name>Test</Name></ReadingList>"
+        )
+
+        # Make it unreadable (skip on Windows where this doesn't work the same)
+        try:
+            os.chmod(unreadable, 0o000)
+        except OSError:
+            pytest.skip("Cannot change file permissions on this system")
+
+        reader = CBLReader()
+
+        try:
+            # Should handle the error gracefully and continue
+            lists = list(reader.read_all(temp_dir))
+
+            # Should have skipped the unreadable file
+            captured = capsys.readouterr()
+            assert "Warning" in captured.out or len(lists) == 0
+        finally:
+            # Restore permissions for cleanup
+            os.chmod(unreadable, 0o644)
+
+    def test_read_all_handles_io_error(self, temp_dir, sample_cbl_content, capsys):
+        """Test read_all handles IOError specifically."""
+        from unittest.mock import patch
+
+        # Create a valid file
+        valid_file = temp_dir / "valid.cbl"
+        valid_file.write_text(sample_cbl_content)
+
+        reader = CBLReader()
+
+        # Simulate IOError during file reading
+        original_read = CBLReader.read
+
+        def mock_read(self, path):
+            if "valid" in str(path):
+                raise OSError("Disk read error")
+            return original_read(self, path)
+
+        with patch.object(CBLReader, "read", mock_read):
+            lists = list(reader.read_all(temp_dir))
+
+        # Should handle error and return empty or warning
+        captured = capsys.readouterr()
+        assert "Warning" in captured.out or len(lists) == 0

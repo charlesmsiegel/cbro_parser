@@ -5,6 +5,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+import requests
+
 from ..cache.sqlite_cache import SQLiteCache
 from ..cbl.writer import CBLWriter
 from ..comicvine.api_client import ComicVineClient
@@ -367,7 +369,7 @@ class CBROParserApp:
 
             # Update UI on main thread
             self.root.after(0, self._on_orders_loaded)
-        except Exception as e:
+        except requests.RequestException as e:
             if shutdown_event.is_set():
                 return
             # If we have cached data, just show a warning
@@ -379,7 +381,13 @@ class CBROParserApp:
                     ),
                 )
             else:
-                self.root.after(0, lambda: self._on_loading_error(str(e)))
+                self.root.after(
+                    0, lambda: self._on_loading_error(f"Network error: {e}")
+                )
+        except OSError as e:
+            if shutdown_event.is_set():
+                return
+            self.root.after(0, lambda: self._on_loading_error(f"File error: {e}"))
 
     def _loading_progress_callback(
         self, current: int, total: int, message: str
@@ -422,7 +430,7 @@ class CBROParserApp:
         if not output_dir.exists():
             try:
                 output_dir.mkdir(parents=True)
-            except Exception as e:
+            except OSError as e:
                 messagebox.showerror(
                     "Error", f"Failed to create output directory:\n\n{e}"
                 )
@@ -547,11 +555,27 @@ class CBROParserApp:
 
                 successful += 1
 
-            except Exception as e:
+            except requests.RequestException as e:
                 self.root.after(
                     0,
                     lambda o=order, err=str(e): progress.log(
-                        f"Error: {o.name} - {err}"
+                        f"Network error: {o.name} - {err}"
+                    ),
+                )
+                failed += 1
+            except OSError as e:
+                self.root.after(
+                    0,
+                    lambda o=order, err=str(e): progress.log(
+                        f"File error: {o.name} - {err}"
+                    ),
+                )
+                failed += 1
+            except ValueError as e:
+                self.root.after(
+                    0,
+                    lambda o=order, err=str(e): progress.log(
+                        f"Parse error: {o.name} - {err}"
                     ),
                 )
                 failed += 1
